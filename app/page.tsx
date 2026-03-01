@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 type MatchPhase = 
   | 'pre-match'
   | 'auto'
+  | 'grace'
   | 'transition'
   | 'shift-1'
   | 'shift-2'
@@ -28,6 +29,7 @@ export default function Home() {
   const phaseDurations: Record<MatchPhase, number> = {
     'pre-match': 0,
     'auto': 20,
+    'grace': 3,
     'transition': 10,
     'shift-1': 25,
     'shift-2': 25,
@@ -45,6 +47,7 @@ export default function Home() {
     const phaseNames: Record<MatchPhase, string> = {
       'pre-match': 'Pre-Match',
       'auto': 'AUTO',
+      'grace': 'GRACE PERIOD',
       'transition': 'TRANSITION SHIFT',
       'shift-1': '',
       'shift-2': '',
@@ -61,6 +64,8 @@ export default function Home() {
     switch (phase) {
       case 'auto':
         return '#4FC3F7'
+      case 'grace':
+        return '#FFFFFF'
       case 'transition':
         return '#BA68C8'
       case 'shift-1':
@@ -79,6 +84,7 @@ export default function Home() {
     if (phase === 'auto' || phase === 'transition' || phase === 'endgame') {
       return true
     }
+    if (phase === 'grace') return false
     if (phase.startsWith('shift-')) {
       return isActivePeriod(phase)
     }
@@ -87,7 +93,7 @@ export default function Home() {
 
 
   const isActivePeriod = (phase: MatchPhase): boolean => {
-    if (phase === 'pre-match' || phase === 'auto' || phase === 'transition' || phase === 'endgame' || phase === 'complete') {
+    if (phase === 'pre-match' || phase === 'auto' || phase === 'grace' || phase === 'transition' || phase === 'endgame' || phase === 'complete') {
       return false
     }
     
@@ -112,13 +118,16 @@ export default function Home() {
   }
 
   const getTotalMatchTime = (): number => {
-    return 20 + 10 + 100 + 30
+    return 20 + 10 + 100 + 30 // grace period excluded
   }
 
   const getElapsedTime = (): number => {
     if (phase === 'pre-match') return 0
     if (phase === 'complete') return getTotalMatchTime()
     
+    // Grace period doesn't count toward match time — treat it as still in auto
+    if (phase === 'grace') return 20
+
     const phases: MatchPhase[] = ['auto', 'transition', 'shift-1', 'shift-2', 'shift-3', 'shift-4', 'endgame']
     const currentIndex = phases.indexOf(phase)
     
@@ -187,7 +196,7 @@ export default function Home() {
 
   useEffect(() => {
     if (isRunning && timeRemaining === 0 && phase !== 'pre-match' && phase !== 'complete') {
-      const phases: MatchPhase[] = ['auto', 'transition', 'shift-1', 'shift-2', 'shift-3', 'shift-4', 'endgame']
+      const phases: MatchPhase[] = ['auto', 'grace', 'transition', 'shift-1', 'shift-2', 'shift-3', 'shift-4', 'endgame']
       const currentIndex = phases.indexOf(phase)
       if (currentIndex < phases.length - 1) {
         const nextPhase = phases[currentIndex + 1]
@@ -297,24 +306,39 @@ export default function Home() {
             >
               {getPhaseName(phase)}
             </motion.div>
-            <motion.div
-              key={`time-${phase}-${timeRemaining}`}
-              initial={{ scale: 1.05 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.15 }}
-              className="text-6xl md:text-7xl font-bold text-white tabular-nums leading-none drop-shadow-lg"
-              style={{ fontFamily: 'var(--font-hanken-grotesk)' }}
-            >
-              {phase === 'pre-match' 
-                ? '2:40' 
-                : phase === 'complete'
-                ? '0:00'
-                : formatTime(getTotalMatchTime() - getElapsedTime())}
-            </motion.div>
-            {phase !== 'pre-match' && phase !== 'complete' && (
-              <div className="text-lg text-gray-400 tabular-nums mt-2">
-                {formatTime(timeRemaining)}
-              </div>
+            {phase === 'grace' ? (
+              <motion.div
+                key={`grace-${timeRemaining}`}
+                initial={{ scale: 1.3, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.2 }}
+                className="text-8xl md:text-9xl font-bold text-white tabular-nums leading-none drop-shadow-lg"
+                style={{ fontFamily: 'var(--font-hanken-grotesk)' }}
+              >
+                {timeRemaining}
+              </motion.div>
+            ) : (
+              <>
+                <motion.div
+                  key={`time-${phase}-${timeRemaining}`}
+                  initial={{ scale: 1.05 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.15 }}
+                  className="text-6xl md:text-7xl font-bold text-white tabular-nums leading-none drop-shadow-lg"
+                  style={{ fontFamily: 'var(--font-hanken-grotesk)' }}
+                >
+                  {phase === 'pre-match' 
+                    ? '2:40' 
+                    : phase === 'complete'
+                    ? '0:00'
+                    : formatTime(getTotalMatchTime() - getElapsedTime())}
+                </motion.div>
+                {phase !== 'pre-match' && phase !== 'complete' && (
+                  <div className="text-lg text-gray-400 tabular-nums mt-2">
+                    {formatTime(timeRemaining)}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </motion.div>
