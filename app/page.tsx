@@ -406,6 +406,52 @@ export default function Home() {
           </motion.div>
         )}
 
+        {/* Phase Scrubber */}
+        {phase !== 'pre-match' && phase !== 'complete' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex w-full max-w-sm gap-1"
+          >
+            {([ 'auto', 'grace', 'transition', 'shift-1', 'shift-2', 'shift-3', 'shift-4', 'endgame'] as MatchPhase[]).map((p) => {
+              const labels: Record<string, string> = {
+                'auto': 'Auto',
+                'grace': 'Grace',
+                'transition': 'Trans',
+                'shift-1': 'S1',
+                'shift-2': 'S2',
+                'shift-3': 'S3',
+                'shift-4': 'S4',
+                'endgame': 'End',
+              }
+              const isCurrent = phase === p
+              const allPhases: MatchPhase[] = ['auto', 'grace', 'transition', 'shift-1', 'shift-2', 'shift-3', 'shift-4', 'endgame']
+              const isPast = allPhases.indexOf(p) < allPhases.indexOf(phase)
+
+              return (
+                <button
+                  key={p}
+                  onClick={() => {
+                    setPhase(p)
+                    setTimeRemaining(phaseDurations[p])
+                    setIsRunning(false)
+                    triggerFlash(p)
+                  }}
+                  className={`flex-1 py-2 text-xs font-medium rounded transition-all ${
+                    isCurrent
+                      ? 'bg-white text-black'
+                      : isPast
+                      ? 'bg-gray-800 text-gray-500 border border-gray-700 hover:border-gray-600'
+                      : 'bg-gray-900/80 text-gray-400 border border-gray-800 hover:border-gray-700'
+                  }`}
+                >
+                  {labels[p]}
+                </button>
+              )
+            })}
+          </motion.div>
+        )}
+
         {/* Complete Match Controls */}
         {phase === 'complete' && (
           <motion.div
